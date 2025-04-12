@@ -24,3 +24,10 @@ Usage:
 1. Clone the repository
 2. Run python main.py
 3. Select a music folder using the "Menu" button
+
+Attribution:
+iPod is a trademark of Apple Inc. This project is not affiliated with or endorsed by Apple Inc.
+
+Images:
+- IPOD Skins: https://wallpapercg.com/ipod-for-iphone-wallpapers
+- Buttons: <a href="https://www.flaticon.com/free-icons/next-song" title="next song icons">Next song icons created by little_dipper_studio - Flaticon</a>
