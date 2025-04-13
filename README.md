@@ -1,4 +1,4 @@
-MOIC - My Own iPlayer Classic
+iReminiscentPlayer
 A lightweight music player with 7 iPod-inspired skins, built with Python and Tkinter, supporting various audio formats (MP3, WAV, FLAC).
 
 Key Features:
