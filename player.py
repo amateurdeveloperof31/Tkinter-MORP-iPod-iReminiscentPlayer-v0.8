@@ -30,7 +30,51 @@ secondary_text = "#B3B8CF"  # Light Gray-Blue
 highlight = "#03A9F4"  # Bright Blue
 
 skins = {
+    "black": {
+        "main_color": "#0096c1",
+        "text": "white",
+        "buttons": "#91948d",
+        "buttons_bg": "#e8e8e1",
+        "screen_bg": "#f4fdfd"
+    },
     "blue": {
+        "main_color": "#0096c1",
+        "text": "white",
+        "buttons": "#91948d",
+        "buttons_bg": "#e8e8e1",
+        "screen_bg": "#f4fdfd"
+    },
+    "cyan": {
+        "main_color": "#d2248b",
+        "text": "white",
+        "buttons": "#91948d",
+        "buttons_bg": "#e8e8e1",
+        "screen_bg": "#f4fdfd"
+    },
+    "green": {
+        "main_color": "#d2248b",
+        "text": "white",
+        "buttons": "#91948d",
+        "buttons_bg": "#e8e8e1",
+        "screen_bg": "#f4fdfd"
+    },
+    "grey": {
+        "main_color": "#d2248b",
+        "text": "white",
+        "buttons": "#91948d",
+        "buttons_bg": "#e8e8e1",
+        "screen_bg": "#f4fdfd"
+    },
+    "magenta": {
+        "main_color": "#d2248b",
+        "text": "white",
+        "buttons": "#91948d",
+        "buttons_bg": "#e8e8e1",
+        "screen_bg": "#f4fdfd"
+    },
+    "pink": {
+        "main_color": "#d2248b",
+        "text": "white",
         "buttons": "#91948d",
         "buttons_bg": "#e8e8e1",
         "screen_bg": "#f4fdfd"
@@ -81,11 +125,13 @@ class IReminiscentPlayer:
         self.current_time = 0
         self.song_time = None
 
+        self.current_skin = "blue"
+
         # Main Canvas
         self.main_canvas = Canvas(self.windows, width=width, height=height)
         self.main_canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.main_skin_image = ImageResizer("images/skins/blue.png", 186)
+        self.main_skin_image = ImageResizer(f"images/skins/{self.current_skin}.png", 186)
         self.main_skin_imager = Label(self.main_canvas, image=self.main_skin_image.image)
         self.main_skin_imager.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -147,11 +193,17 @@ class IReminiscentPlayer:
         self.next_song_button.bind("<ButtonPress-1>", lambda event: self.slider_pressed("forward"))
         self.next_song_button.bind("<ButtonRelease-1>", lambda event: self.handle_release("forward"))
 
-        # Loading the Save File
+        # Loading Save File
         self.load_settings_file()
 
-        # Saving Before Closing Window
+        # Saving Settings
         self.windows.protocol("WM_DELETE_WINDOW", self.close_program_event)
+
+        # Skin Selector
+        self.skin_selector_button = Button(self.main_canvas, bg="#e8e8e1", text="Select Skin",
+                                           highlightthickness=0, borderwidth=0, activebackground="#e8e8e1",
+                                           command=self.open_skin_selector)
+        self.skin_selector_button.place(relx=0.8, rely=0.95, anchor=CENTER)
 
         # Window Mainloop
         self.windows.mainloop()
@@ -248,7 +300,8 @@ class IReminiscentPlayer:
             settings = {
                 "folder_path": None,
                 "current_song_name": None,
-                "current_song_time": None
+                "current_song_time": None,
+                "current_skin": "blue"
             }
             with open('settings/mmp_settings.json', 'w') as settings_file:
                 settings_file.write(json.dumps(settings, indent=4))
@@ -259,18 +312,23 @@ class IReminiscentPlayer:
                 try:
                     current_song_name = settings_dict['current_song_name']
                     self.song_time = settings_dict['current_song_time']
+                    self.current_skin = settings_dict['current_skin']
                 except json.decoder.JSONDecodeError:
                     current_song_name = None
                     self.song_time = None
+                    self.current_skin = "blue"
             else:
                 current_song_name = None
                 self.song_time = None
+                self.current_skin = "blue"
 
             self.load_playlist()
 
 # ------------------------------------------------- Load Playlist ------------------------------------------------------
     def load_playlist(self):
         global folder_path, current_song_name, folder_path_label, play_queue, song_number, current_song_extension, play_queue_extensions
+        self.main_skin_image = ImageResizer(f"images/skins/{self.current_skin}.png", 186)
+        self.main_skin_imager.config(image=self.main_skin_image.image)
         if not folder_path or os.path.isdir(folder_path) == False:
             folder_path_label = "Select a Folder."
         else:
@@ -542,6 +600,74 @@ class IReminiscentPlayer:
         with open("settings/mmp_settings.json", "w") as settings_file:
             json.dump(settings_data, settings_file, indent=4)
         self.windows.destroy()
+
+# ----------------------------------------------- Open Skin Selector ---------------------------------------------------
+    def open_skin_selector(self):
+        Skin_Selector(self.windows, self.current_skin)
+
+# -------------------------------------------------- Skin Selector -----------------------------------------------------
+class Skin_Selector(Toplevel):
+    def __init__(self, main_window, skin_color):
+        global skins
+        super().__init__()
+
+        self.title("Select Player Skin")
+        self.resizable(False, False)
+        self.config(bg='white')
+
+        x = int(main_window.winfo_x() + (main_window.winfo_width() / 2) - (300 / 2))
+        y = main_window.winfo_y()
+        self.geometry(f"200x300+{x}+{y + 50}")
+
+        self.transient(main_window)
+        self.grab_set()
+        self.focus_set()
+
+        self.selected_color = skin_color
+
+        self.color_label = Label(self, text=skin_color.upper(), bg='white', font=("arial", 12, "bold"))
+        self.color_label.place(relx=0.5, rely=0.08, anchor=CENTER)
+
+        self.skin_image = ImageResizer(f"images/skins/{skin_color}.png", 100)
+        self.skin_imager = Label(self, image=self.skin_image.image)
+        self.skin_imager.place(relx=0.5, rely=0.5, anchor=CENTER)
+
+        self.next_image = ImageResizer(f"images/prev-img.png", 25, TRUE)
+        self.next_imager = Button(self, image=self.next_image.image, bg='white', activebackground='white',
+                                  borderwidth=0, command= lambda: self.skin_controls('forward'))
+        self.next_imager.place(relx=0.88, rely=0.5, anchor=CENTER)
+
+        self.prev_image = ImageResizer(f"images/prev-img.png", 25)
+        self.prev_imager = Button(self, image=self.prev_image.image, bg='white', activebackground='white',
+                                  borderwidth=0, command= lambda: self.skin_controls('backward'))
+        self.prev_imager.place(relx=0.12, rely=0.5, anchor=CENTER)
+
+        self.apply_button = Button(self, bg='white', text="✅", activebackground='white', height=2,
+                                  borderwidth=0)
+        self.apply_button.place(relx=0.45, rely=0.95, anchor=E)
+
+        self.cancel_button = Button(self, text="❌", bg='white', activebackground='white', height=2,
+                                   borderwidth=0)
+        self.cancel_button.place(relx=0.55, rely=0.95, anchor=W)
+
+    def skin_controls(self, direc):
+        all_skin_colors = list(skins.keys())
+        index = all_skin_colors.index(self.selected_color)
+        if direc == 'forward':
+            if index + 1 < len(all_skin_colors):
+                index += 1
+                self.selected_color = all_skin_colors[index]
+            else:
+                self.selected_color = self.selected_color
+        else:
+            if index - 1 >= 0:
+                index -= 1
+                self.selected_color = all_skin_colors[index]
+            else:
+                self.selected_color = self.selected_color
+
+        self.skin_image = ImageResizer(f"images/skins/{self.selected_color}.png", 100)
+        self.skin_imager.config(image=self.skin_image.image)
 
 # ------------------------------------------------------- Run ----------------------------------------------------------
 if __name__ == "__main__":
