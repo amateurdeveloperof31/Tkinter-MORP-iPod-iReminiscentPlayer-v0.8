@@ -8,7 +8,6 @@ Key Features:
 - Auto-Load and save playlist settings
 - MusicBrainz API integration for metadata/album art retrieval (In works)
 - Playlist management (In works)
-- Album art display (In works)
 
 Requirements:
 
