@@ -28,8 +28,8 @@ Attribution:
 Images:
 - IPOD Skins: https://wallpapercg.com/ipod-for-iphone-wallpapers
 - Buttons: <a href="https://www.flaticon.com/free-icons/next-song" title="next song icons">Song Multimedia icons created by little_dipper_studio - Flaticon</a>
-  - Author: https://www.flaticon.com/authors/little-dipper-studio
-  - Pack: https://www.flaticon.com/packs/media-player-buttons-13481041
+  - Author: <a href="https://www.flaticon.com/authors/little-dipper-studio">little_dipper_studio - Flaticon</a>
+  - Pack: <a href="https://www.flaticon.com/packs/media-player-buttons-13481041">Multimedia Icons Pack - Flaticon</a>
 
 Screenshots:
 - Blue
