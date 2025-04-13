@@ -65,15 +65,15 @@ status = None
 # ----------------------------------------------------Main Class--------------------------------------------------------
 class IPlayerClassic:
     def __init__(self):
-        self.windows = CTk()
-        self.windows.title("MOMP - Mini")
+        self.windows = Tk()
+        self.windows.title("IPlayerClassic")
         width, height = 185, 400
         self.windows.minsize(width, height)
         self.windows.maxsize(width, height)
         self.windows.resizable(False, False)
         window_icon = PhotoImage(file="images/window_icon.png")
         self.windows.iconphoto(False, window_icon)
-        self.windows.configure(fg_color=main_background)
+        self.windows.configure(bg=main_background)
 
         # Initialize Mixer
         mixer.init()
@@ -82,21 +82,21 @@ class IPlayerClassic:
         self.song_time = None
 
         # Main Canvas
-        self.main_canvas = CTkCanvas(self.windows, width=width, height=height)
+        self.main_canvas = Canvas(self.windows, width=width, height=height)
         self.main_canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.main_skin_image = ImageResizer("images/skins/pink.png", 235)
+        self.main_skin_image = ImageResizer("images/skins/blue.png", 186)
         self.main_skin_imager = Label(self.main_canvas, image=self.main_skin_image.image)
         self.main_skin_imager.place(relx=0.5, rely=0.5, anchor="center")
 
         # Selected Folder Name
         self.labeler = Label(self.main_canvas, bg="#f4fdfd", text="Songs playing in Folder", font=("Arial", 8, "normal"),
                              width=20)
-        self.labeler.place(relx=0.5, rely=0.08, anchor=CENTER)
+        self.labeler.place(relx=0.5, rely=0.082, anchor=CENTER)
 
         self.folder_label = Label(self.main_canvas, bg="#f4fdfd", text=folder_path_label, font=("Arial", 8, "bold"),
                                   width=20)
-        self.folder_label.place(relx=0.5, rely=0.12, anchor=CENTER)
+        self.folder_label.place(relx=0.5, rely=0.135, anchor=CENTER)
 
         # Song Name and Artist
         self.song_name_label = Label(self.main_canvas, bg="#f4fdfd", text=song_title, font=("arial", 10, "bold"))
@@ -121,26 +121,26 @@ class IPlayerClassic:
         self.total_duration_label.place(relx=0.53, rely=0.25, anchor=W)
 
         # Music Controls
-        select_music_folder_image = ImageResizer("images/menu.png", 35)
+        select_music_folder_image = ImageResizer("images/menu.png", 30)
         self.select_music_folder_button = Button(self.main_canvas, bg="#edede7", text="Menu", image=select_music_folder_image.image,
                                            command=self.select_song_folder,
                                            highlightthickness=0, borderwidth=0, activebackground="#edede7")
         self.select_music_folder_button.place(relx=0.5, rely=0.53, anchor=CENTER)
 
-        previous_song_image = ImageResizer("images/direction-p.png", 15)
+        previous_song_image = ImageResizer("images/direction-p.png", 12)
         self.previous_song_button = Button(self.main_canvas, bg="#e8e8e1", image=previous_song_image.image,
                                            highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.previous_song_button.place(relx=0.21, rely=0.67, anchor=CENTER)
         self.previous_song_button.bind("<ButtonPress-1>", lambda event: self.slider_pressed("backward"))
         self.previous_song_button.bind("<ButtonRelease-1>", lambda event: self.handle_release("backward"))
 
-        self.play_song_image = ImageResizer("images/play.png", 15)
-        self.pause_song_image = ImageResizer("images/pause.png", 15)
+        self.play_song_image = ImageResizer("images/play.png", 12)
+        self.pause_song_image = ImageResizer("images/pause.png", 12)
         self.play_song_button = Button(self.main_canvas, bg="#e8e8e1", image=self.play_song_image.image, command=self.play_song,
                                        highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.play_song_button.place(relx=0.5, rely=0.81, anchor=CENTER)
 
-        next_song_image = ImageResizer("images/direction-n.png", 15)
+        next_song_image = ImageResizer("images/direction-n.png", 12)
         self.next_song_button = Button(self.main_canvas, bg="#e8e8e1", image=next_song_image.image,
                                        highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.next_song_button.place(relx=0.81, rely=0.67, anchor=CENTER)
