@@ -63,7 +63,7 @@ playlist_song_label_names = []
 
 status = None
 # ----------------------------------------------------Main Class--------------------------------------------------------
-class IPlayerClassic:
+class IReminiscentPlayer:
     def __init__(self):
         self.windows = Tk()
         self.windows.title("IPlayerClassic")
@@ -545,4 +545,4 @@ class IPlayerClassic:
 
 # ------------------------------------------------------- Run ----------------------------------------------------------
 if __name__ == "__main__":
-    app = IPlayerClassic()
+    app = IReminiscentPlayer()
