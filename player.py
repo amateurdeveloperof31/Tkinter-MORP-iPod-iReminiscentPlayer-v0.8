@@ -1,4 +1,4 @@
-# ---------------------------------------------------------- Imports --------------------------------------------------
+# ------------------------------------------------------- Imports ------------------------------------------------------
 from tkinter import * # Tkinter
 from tkinter import filedialog, ttk # Tkinter
 from io import BytesIO # Bytes IO
@@ -19,7 +19,7 @@ from customtkinter import * # Custom Tkinter
 from image_resizer import ImageResizer # Custom Image Resizer
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide" # PyGame Prompt Hide
 import pygame.mixer as mixer # Mixer
-# --------------------------------------------------- Global Variables ------------------------------------------------
+# --------------------------------------------------- Global Variables -------------------------------------------------
 main_background = "#2F4F7F"
 alternate_background = "#1B3645"
 slider_color = "#34A8FF"
@@ -51,7 +51,6 @@ current_song_length = 0
 
 folder_path = None
 current_song_name = None
-song_time = None
 
 play_queue = []
 play_queue_extensions = []
@@ -64,7 +63,7 @@ playlist_song_label_names = []
 
 status = None
 # ----------------------------------------------------Main Class--------------------------------------------------------
-class MusicPlayerUI:
+class IPlayerClassic:
     def __init__(self):
         self.windows = CTk()
         self.windows.title("MOMP - Mini")
@@ -79,11 +78,14 @@ class MusicPlayerUI:
         # Initialize Mixer
         mixer.init()
 
+        self.current_time = 0
+        self.song_time = None
+
         # Main Canvas
         self.main_canvas = CTkCanvas(self.windows, width=width, height=height)
         self.main_canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.main_skin_image = ImageResizer("images/skins/black.png", 235)
+        self.main_skin_image = ImageResizer("images/skins/pink.png", 235)
         self.main_skin_imager = Label(self.main_canvas, image=self.main_skin_image.image)
         self.main_skin_imager.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -126,9 +128,11 @@ class MusicPlayerUI:
         self.select_music_folder_button.place(relx=0.5, rely=0.53, anchor=CENTER)
 
         previous_song_image = ImageResizer("images/direction-p.png", 15)
-        self.previous_song_button = Button(self.main_canvas, bg="#e8e8e1", image=previous_song_image.image, command=self.previous_song,
+        self.previous_song_button = Button(self.main_canvas, bg="#e8e8e1", image=previous_song_image.image,
                                            highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.previous_song_button.place(relx=0.21, rely=0.67, anchor=CENTER)
+        self.previous_song_button.bind("<ButtonPress-1>", lambda event: self.slider_pressed("backward"))
+        self.previous_song_button.bind("<ButtonRelease-1>", lambda event: self.handle_release("backward"))
 
         self.play_song_image = ImageResizer("images/play.png", 15)
         self.pause_song_image = ImageResizer("images/pause.png", 15)
@@ -137,9 +141,11 @@ class MusicPlayerUI:
         self.play_song_button.place(relx=0.5, rely=0.81, anchor=CENTER)
 
         next_song_image = ImageResizer("images/direction-n.png", 15)
-        self.next_song_button = Button(self.main_canvas, bg="#e8e8e1", image=next_song_image.image, command=self.next_song,
+        self.next_song_button = Button(self.main_canvas, bg="#e8e8e1", image=next_song_image.image,
                                        highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.next_song_button.place(relx=0.81, rely=0.67, anchor=CENTER)
+        self.next_song_button.bind("<ButtonPress-1>", lambda event: self.slider_pressed("forward"))
+        self.next_song_button.bind("<ButtonRelease-1>", lambda event: self.handle_release("forward"))
 
         # Loading the Save File
         self.load_settings_file()
@@ -162,16 +168,16 @@ class MusicPlayerUI:
 
 # -------------------------------------------------- Play Song ---------------------------------------------------------
     def play_song(self):
-        global play_state, song_time
+        global play_state
         if play_state == 0:
             self.update_progressbar()
             play_state = 1
         elif play_state == 1:
             play_state = 2
-            if song_time:
+            if self.song_time:
                 mixer.music.play()
                 mixer.music.rewind()
-                mixer.music.set_pos(song_time)
+                mixer.music.set_pos(self.song_time)
             else:
                 mixer.music.play()
             self.play_song_button.configure(image=self.pause_song_image.image)
@@ -188,8 +194,8 @@ class MusicPlayerUI:
 
 # -------------------------------------------------- Next Song ---------------------------------------------------------
     def next_song(self):
-        global play_queue, current_song_name, current_song_extension, song_number, song_time
-        song_time = None
+        global play_queue, current_song_name, current_song_extension, song_number
+        self.song_time = None
         if song_number < len(play_queue)-1:
             song_number += 1
             current_song_name = play_queue[song_number]
@@ -198,8 +204,8 @@ class MusicPlayerUI:
 
 # ------------------------------------------------ Previous Song -------------------------------------------------------
     def previous_song(self):
-        global play_queue, current_song_name, current_song_extension, song_number, song_time
-        song_time = None
+        global play_queue, current_song_name, current_song_extension, song_number
+        self.song_time = None
         if song_number > 0:
             song_number -= 1
             current_song_name = play_queue[song_number]
@@ -208,33 +214,33 @@ class MusicPlayerUI:
 
 # --------------------------------------------- Select from Playlist ---------------------------------------------------
     def on_double_click(self, label_number, label_name, playlist_song_list_frame):
-        global current_song_name, current_song_extension, song_number, song_time, play_queue
+        global current_song_name, current_song_extension, song_number, play_queue
         song_number = label_number
         current_song_name = play_queue[song_number]
         current_song_extension = play_queue_extensions[song_number]
-        song_time = None
+        self.song_time = None
         self.load_song()
 
 # ---------------------------------------------- Select Song Folder ----------------------------------------------------
     def select_song_folder(self):
-        global folder_path, current_song_name, song_time, song_number
+        global folder_path, current_song_name, song_number
         folder_path = filedialog.askdirectory()
         if folder_path:
             current_song_name = None
-            song_time = None
+            self.song_time = None
             song_number = 0
             settings = {
                 "folder_path": folder_path,
                 "current_song_name": current_song_name,
-                "current_song_time": song_time
+                "current_song_time": self.song_time
             }
             with open('settings/mmp_settings.json', 'w') as settings_file:
                 settings_file.write(json.dumps(settings))
             self.load_settings_file()
 
-# ----------------------------------------------------Load Settings-------------------------------------------------
+# ------------------------------------------------- Load Settings ------------------------------------------------------
     def load_settings_file(self):
-        global folder_path, current_song_name, song_time
+        global folder_path, current_song_name
         try:
             with open("settings/mmp_settings.json", "r") as settings_file:
                 settings_data = settings_file.read()
@@ -252,17 +258,17 @@ class MusicPlayerUI:
             if os.path.isdir(folder_path):
                 try:
                     current_song_name = settings_dict['current_song_name']
-                    song_time = settings_dict['current_song_time']
+                    self.song_time = settings_dict['current_song_time']
                 except json.decoder.JSONDecodeError:
                     current_song_name = None
-                    song_time = None
+                    self.song_time = None
             else:
                 current_song_name = None
-                song_time = None
+                self.song_time = None
 
             self.load_playlist()
 
-# ---------------------------------------------------Load Playlist-------------------------------------------------
+# ------------------------------------------------- Load Playlist ------------------------------------------------------
     def load_playlist(self):
         global folder_path, current_song_name, folder_path_label, play_queue, song_number, current_song_extension, play_queue_extensions
         if not folder_path or os.path.isdir(folder_path) == False:
@@ -313,7 +319,7 @@ class MusicPlayerUI:
 
             self.load_song()
 
-# ----------------------------------------------------Load Song-------------------------------------------------
+# --------------------------------------------------- Load Song --------------------------------------------------------
     def load_song(self):
         global folder_path, current_song_name, song_title, song_artist, song_album, play_state, song_number, current_song_length, status, current_song_extension
         if status:
@@ -354,7 +360,7 @@ class MusicPlayerUI:
         self.update_music_info()
         self.play_song()
 
-# ----------------------------------------------------Song Thumbnails---------------------------------------------
+# ------------------------------------------------ Song Thumbnails -----------------------------------------------------
     def get_song_thumbnail(self, tags, song_namer, song_artiste):
         sasa_joined = f"{song_namer} {song_artiste}"
         image_file_name = ''.join(letter for letter in sasa_joined if letter.isalnum())
@@ -383,7 +389,7 @@ class MusicPlayerUI:
                 album_art_image = ImageResizer(image_location, 200)
         return album_art_image, image_location
 
-# ----------------------------------------------------Download Album Art------------------------------------------------
+# ---------------------------------------------- Download Album Art ----------------------------------------------------
     def download_album_art(self):
         song_namer = self.song_namer
         song_artiste = self.song_artiste
@@ -424,16 +430,16 @@ class MusicPlayerUI:
 
         self.update_music_info()
 
-# ----------------------------------------------------Music Info-------------------------------------------------
+# -------------------------------------------------- Music Info --------------------------------------------------------
     def update_music_info(self):
         self.song_name_label.configure(text=self.song_namer)
         self.song_artist_label.configure(text=self.song_artiste)
 
-# ----------------------------------------------------Progress Bar-------------------------------------------------
+# ------------------------------------------------ Song Progress -------------------------------------------------------
     def update_progressbar(self):
-        global status, play_state, current_song_length, song_time, song_number, current_song_name
-        if song_time:
-            current_time = round((mixer.music.get_pos() / 1000) + song_time)
+        global status, play_state, current_song_length, song_number, current_song_name
+        if self.song_time:
+            current_time = round((mixer.music.get_pos() / 1000) + self.song_time)
         else:
             current_time = round(mixer.music.get_pos() / 1000)
         # self.song_progress_bar.set(round(current_time))
@@ -446,7 +452,7 @@ class MusicPlayerUI:
                 if song_number < len(play_queue) - 1:
                     self.next_song()
                 else:
-                    song_time = 0
+                    self.song_time = 0
                     song_number = 0
                     current_song_name = 0
                     play_state = 0
@@ -455,26 +461,75 @@ class MusicPlayerUI:
                     self.current_duration_label.configure(text="00:00")
                     self.load_playlist()
 
-# ------------------------------------------------Manual Progress Bar----------------------------------------------
-#     def manual_slider_positioning(self, event):
-#         time.sleep(1)
-#         mixer.music.pause()
-#         global play_state, current_song_length, song_time
-#         current_time = int(self.song_progress_bar.get())
-#         song_time = current_time
-#         minutes, seconds = divmod(int(current_time), 60)
-#         self.current_duration_label.configure(text="{:02d}:{:02d}".format(minutes, seconds))
-#         if ceil(current_time) == ceil(current_song_length) - 1:
-#             self.next_song()
-#         play_state = 1
-#         self.play_song()
+# --------------------------------------------- Check Button Pressed ---------------------------------------------------
+    def slider_pressed(self, seek_d, event=None):
+        self.seek_mode = False
+        self.seek_timer = self.windows.after(300, lambda: self.start_seeking(seek_d))
 
-# ----------------------------------------------------On Close-------------------------------------------------
+# -------------------------------------------------- Start Seek --------------------------------------------------------
+    def start_seeking(self, seek_d):
+        mixer.music.pause()
+        self.current_time = round((mixer.music.get_pos() / 1000) + (self.song_time or 0))
+        self.seek_mode = True
+        self.slider_pressed_loop(seek_d)
+
+# --------------------------------------------------- Seek Loop --------------------------------------------------------
+    def slider_pressed_loop(self, seek_d):
+        print(self.song_time)
+        if seek_d == "forward":
+            self.current_time = self.current_time + 1
+        else:
+            self.current_time = self.current_time - 1
+        minutes, seconds = divmod(self.current_time, 60)
+        self.current_duration_label.configure(text=f"{minutes:02d}:{seconds:02d}")
+
+        if ceil(self.current_time) == ceil(current_song_length) - 1:
+            self.next_song()
+        elif ceil(self.current_time) < 1:
+            self.song_time = 0
+            self.play_song()
+
+        self.song_time = self.current_time
+
+        self.after_id = self.windows.after(100, lambda: self.slider_pressed_loop(seek_d))
+
+# --------------------------------------------------- Seek Stop --------------------------------------------------------
+    def slider_released(self, event=None):
+        global play_state, current_song_length
+
+        if hasattr(self, 'seek_timer'):
+            self.windows.after_cancel(self.seek_timer)
+            del self.seek_timer
+
+        if getattr(self, 'seek_mode', False) and hasattr(self, 'after_id'):
+            self.windows.after_cancel(self.after_id)
+            del self.after_id
+
+        play_state = 1
+        self.play_song()
+
+# ------------------------------------------------- Handle Release -----------------------------------------------------
+    def handle_release(self, seek_d, event=None):
+        if getattr(self, 'seek_mode', False):
+            if hasattr(self, 'after_id'):
+                self.windows.after_cancel(self.after_id)
+                del self.after_id
+            self.slider_released()
+        else:
+            if hasattr(self, 'seek_timer'):
+                self.windows.after_cancel(self.seek_timer)
+                del self.seek_timer
+            if seek_d == "forward":
+                self.next_song()
+            else:
+                self.previous_song()
+
+# ---------------------------------------------------- On Close --------------------------------------------------------
     def close_program_event(self):
-        global song_time, current_song_name
+        global current_song_name
         current_song_time = (mixer.music.get_pos() / 1000)
-        if song_time:
-            current_song_time += song_time
+        if self.song_time:
+            current_song_time += self.song_time
         if current_song_time < 0:
             current_song_time = 0
         current_position = {
@@ -488,6 +543,6 @@ class MusicPlayerUI:
             json.dump(settings_data, settings_file, indent=4)
         self.windows.destroy()
 
-# ------------------------------------------------Call the Program---------------------------------------------
+# ------------------------------------------------------- Run ----------------------------------------------------------
 if __name__ == "__main__":
-    app = MusicPlayerUI()
+    app = IPlayerClassic()
