@@ -11,7 +11,6 @@ import json # JSON
 import os # OS
 from os.path import exists # Filepath
 from math import ceil # Math
-from musicbrainz_api import MusicBrainzAPI # Music Brainz API
 import requests # Requests
 import time # Time
 from datetime import datetime # Date/Time
@@ -309,7 +308,7 @@ class IReminiscentPlayer:
                 "current_song_name": current_song_name,
                 "current_song_time": self.song_time
             }
-            with open('settings/mmp_settings.json', 'w') as settings_file:
+            with open('settings/irp_settings.json', 'w') as settings_file:
                 settings_file.write(json.dumps(settings))
             self.load_settings_file()
 
