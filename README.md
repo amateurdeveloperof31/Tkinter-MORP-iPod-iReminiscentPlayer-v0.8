@@ -27,7 +27,10 @@ Usage:
 
 Attribution:
 iPod is a trademark of Apple Inc. This project is not affiliated with or endorsed by Apple Inc.
-
 Images:
 - IPOD Skins: https://wallpapercg.com/ipod-for-iphone-wallpapers
 - Buttons: <a href="https://www.flaticon.com/free-icons/next-song" title="next song icons">Next song icons created by little_dipper_studio - Flaticon</a>
+
+Screenshots:
+- Blue
+![image](https://github.com/user-attachments/assets/23ac3983-9fa5-45e7-88a3-ac5795d9e569)
