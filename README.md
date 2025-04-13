@@ -6,7 +6,6 @@ Key Features:
 - Play, pause, and skip tracks
 - Display song metadata (title, artist, album)
 - Auto-Load and save playlist settings
-- MusicBrainz API integration for metadata/album art retrieval (In works)
 - Playlist management (In works)
 
 Requirements:
@@ -15,7 +14,6 @@ Requirements:
 - Tkinter
 - Mutagen
 - Pillow
-- MusicBrainz API (In works)
 - Custom Tkinter (In works)
 
 Usage:
