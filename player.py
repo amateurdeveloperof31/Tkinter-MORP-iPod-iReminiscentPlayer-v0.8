@@ -31,55 +31,80 @@ highlight = "#03A9F4"  # Bright Blue
 
 skins = {
     "black": {
-        "main_color": "#0096c1",
+        "main_color": "#333333",
         "text": "white",
-        "buttons": "#91948d",
-        "buttons_bg": "#e8e8e1",
-        "screen_bg": "#f4fdfd"
+        "buttons": "#ffffff",
+        "main_button_color": "#e14354",
+        "playback_color": "#d13746",
+        "play_pause_color": "#c02a38"
     },
     "blue": {
         "main_color": "#0096c1",
         "text": "white",
         "buttons": "#91948d",
-        "buttons_bg": "#e8e8e1",
-        "screen_bg": "#f4fdfd"
+        "main_button_color": "#eeeee8",
+        "playback_color": "#e8e8e1",
+        "play_pause_color": "#e2e2da"
     },
     "cyan": {
-        "main_color": "#d2248b",
+        "main_color": "#69bdbe",
         "text": "white",
         "buttons": "#91948d",
-        "buttons_bg": "#e8e8e1",
-        "screen_bg": "#f4fdfd"
+        "main_button_color": "#eeede8",
+        "playback_color": "#e7e7e0",
+        "play_pause_color": "#e2e2da"
     },
     "green": {
-        "main_color": "#d2248b",
+        "main_color": "#8bc932",
         "text": "white",
         "buttons": "#91948d",
-        "buttons_bg": "#e8e8e1",
-        "screen_bg": "#f4fdfd"
+        "main_button_color": "#edece7",
+        "playback_color": "#e8e8e1",
+        "play_pause_color": "#e2e2da"
     },
     "grey": {
-        "main_color": "#d2248b",
+        "main_color": "#6b6a6d",
         "text": "white",
-        "buttons": "#91948d",
-        "buttons_bg": "#e8e8e1",
-        "screen_bg": "#f4fdfd"
+        "buttons": "#ffffff",
+        "main_button_color": "#242424",
+        "playback_color": "#242424",
+        "play_pause_color": "#242424"
     },
     "magenta": {
-        "main_color": "#d2248b",
+        "main_color": "#e54556",
         "text": "white",
-        "buttons": "#91948d",
-        "buttons_bg": "#e8e8e1",
-        "screen_bg": "#f4fdfd"
+        "buttons": "#ffffff",
+        "main_button_color": "#242424",
+        "playback_color": "#242424",
+        "play_pause_color": "#242424"
     },
     "pink": {
-        "main_color": "#d2248b",
+        "main_color": "#d3248c",
         "text": "white",
         "buttons": "#91948d",
-        "buttons_bg": "#e8e8e1",
-        "screen_bg": "#f4fdfd"
+        "main_button_color": "#eeeee8",
+        "playback_color": "#e8e7e1",
+        "play_pause_color": "#e2e2da"
+    },
+    "red": {
+        "main_color": "#e54557",
+        "text": "white",
+        "buttons": "#91948d",
+        "main_button_color": "#eeede8",
+        "playback_color": "#e7e6e0",
+        "play_pause_color": "#e2e2db"
+    },
+    "white": {
+        "main_color": "#deddd9",
+        "text": "white",
+        "buttons": "#91948d",
+        "main_button_color": "#eeeee8",
+        "playback_color": "#e7e6e0",
+        "play_pause_color": "#e1e1da"
     }
 }
+
+skins_screen_bg = "#f4fdfd"
 
 # Play State: {0: First Time - Paused, 1: Loaded - Paused, 2: Play, 3: Paused}
 play_state = 0
@@ -126,6 +151,7 @@ class IReminiscentPlayer:
         self.song_time = None
 
         self.current_skin = "blue"
+        self.playback_control_color = "direction-p"
 
         # Main Canvas
         self.main_canvas = Canvas(self.windows, width=width, height=height)
@@ -136,44 +162,41 @@ class IReminiscentPlayer:
         self.main_skin_imager.place(relx=0.5, rely=0.5, anchor="center")
 
         # Selected Folder Name
-        self.labeler = Label(self.main_canvas, bg="#f4fdfd", text="Songs playing in Folder", font=("Arial", 8, "normal"),
-                             width=20)
+        self.labeler = Label(self.main_canvas, bg=skins_screen_bg, text="Songs playing in Folder", width=20,
+                             font=("Arial", 8, "normal"))
         self.labeler.place(relx=0.5, rely=0.082, anchor=CENTER)
 
-        self.folder_label = Label(self.main_canvas, bg="#f4fdfd", text=folder_path_label, font=("Arial", 8, "bold"),
-                                  width=20)
+        self.folder_label = Label(self.main_canvas, bg=skins_screen_bg, text=folder_path_label, width=20,
+                                  font=("Arial", 8, "bold"))
         self.folder_label.place(relx=0.5, rely=0.135, anchor=CENTER)
 
         # Song Name and Artist
-        self.song_name_label = Label(self.main_canvas, bg="#f4fdfd", text=song_title, font=("arial", 10, "bold"))
+        self.song_name_label = Label(self.main_canvas, bg=skins_screen_bg, text=song_title, font=("arial", 10, "bold"))
         self.song_name_label.place(relx=0.5, rely=0.3, anchor=CENTER)
-        self.song_artist_label = Label(self.main_canvas, bg="#f4fdfd", text=song_artist, font=("arial", 8, "normal"))
+        self.song_artist_label = Label(self.main_canvas, bg=skins_screen_bg, text=song_artist,
+                                       font=("arial", 8, "normal"))
         self.song_artist_label.place(relx=0.5, rely=0.35, anchor=CENTER)
 
         # Song Duration and Progressbar
-        self.current_duration_label = Label(self.main_canvas, bg="#f4fdfd", text="00:00", font=("arial", 8, "normal"))
+        self.current_duration_label = Label(self.main_canvas, bg=skins_screen_bg, text="00:00",
+                                            font=("arial", 8, "normal"))
         self.current_duration_label.place(relx=0.47, rely=0.25, anchor=E)
 
-        self.duration_divider_label = Label(self.main_canvas, bg="#f4fdfd", text="/", font=("arial", 8, "normal"))
+        self.duration_divider_label = Label(self.main_canvas, bg=skins_screen_bg, text="/", font=("arial", 8, "normal"))
         self.duration_divider_label.place(relx=0.498, rely=0.25, anchor=CENTER)
-
-        # self.song_progress_bar = CTkSlider(self.main_canvas, orientation=HORIZONTAL,
-        #                                          progress_color=slider_color, fg_color="white",
-        #                                          width=185, button_color=slider_color)
-        # self.song_progress_bar.bind("<ButtonRelease-1>", self.manual_slider_positioning)
-        # self.song_progress_bar.place(relx=0.5, rely=0.82, anchor=CENTER)
 
         self.total_duration_label = Label(self.main_canvas, bg="#f4fdfd", text="00:00", font=("arial", 8, "normal"))
         self.total_duration_label.place(relx=0.53, rely=0.25, anchor=W)
 
         # Music Controls
-        select_music_folder_image = ImageResizer("images/menu.png", 30)
-        self.select_music_folder_button = Button(self.main_canvas, bg="#edede7", text="Menu", image=select_music_folder_image.image,
-                                           command=self.select_song_folder,
-                                           highlightthickness=0, borderwidth=0, activebackground="#edede7")
+        select_music_folder_image = ImageResizer("images/menu.png", 28)
+        self.select_music_folder_button = Button(self.main_canvas, bg=skins[self.current_skin]["main_button_color"],
+                                                activebackground = skins[self.current_skin]["main_button_color"],
+                                                 image=select_music_folder_image.image, borderwidth=0,
+                                                command=self.select_song_folder, highlightthickness=0)
         self.select_music_folder_button.place(relx=0.5, rely=0.53, anchor=CENTER)
 
-        previous_song_image = ImageResizer("images/direction-p.png", 12)
+        previous_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12)
         self.previous_song_button = Button(self.main_canvas, bg="#e8e8e1", image=previous_song_image.image,
                                            highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.previous_song_button.place(relx=0.21, rely=0.67, anchor=CENTER)
@@ -186,7 +209,7 @@ class IReminiscentPlayer:
                                        highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.play_song_button.place(relx=0.5, rely=0.81, anchor=CENTER)
 
-        next_song_image = ImageResizer("images/direction-n.png", 12)
+        next_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12, True)
         self.next_song_button = Button(self.main_canvas, bg="#e8e8e1", image=next_song_image.image,
                                        highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.next_song_button.place(relx=0.81, rely=0.67, anchor=CENTER)
@@ -327,8 +350,9 @@ class IReminiscentPlayer:
 # ------------------------------------------------- Load Playlist ------------------------------------------------------
     def load_playlist(self):
         global folder_path, current_song_name, folder_path_label, play_queue, song_number, current_song_extension, play_queue_extensions
-        self.main_skin_image = ImageResizer(f"images/skins/{self.current_skin}.png", 186)
-        self.main_skin_imager.config(image=self.main_skin_image.image)
+
+        self.update_skin(self.current_skin)
+
         if not folder_path or os.path.isdir(folder_path) == False:
             folder_path_label = "Select a Folder."
         else:
@@ -418,76 +442,6 @@ class IReminiscentPlayer:
         self.update_music_info()
         self.play_song()
 
-# ------------------------------------------------ Song Thumbnails -----------------------------------------------------
-    def get_song_thumbnail(self, tags, song_namer, song_artiste):
-        sasa_joined = f"{song_namer} {song_artiste}"
-        image_file_name = ''.join(letter for letter in sasa_joined if letter.isalnum())
-        image_location = f"images/album_art/{image_file_name}"
-        try:
-            image_location = f"{image_location}.png"
-            # pil_image = Image.open(image_location)
-            # album_art_image = ImageTk.PhotoImage(pil_image)
-            album_art_image = ImageResizer(image_location, 200)
-        except (TclError, FileNotFoundError) as e:
-            print(f'File Location Error:{e}')
-            try:
-                pict = tags.get("APIC:").data
-            except AttributeError as e:
-                print(f'Song Tag Error:{e}\n Default Album Art!!')
-                image_location = "images/default_album_art.png"
-                album_art_image = ImageResizer(image_location, 200)
-                return album_art_image, image_location
-            else:
-                im = Image.open(BytesIO(pict))
-                new_image = im.resize((300, 300))
-                sasa_joined = f"{song_namer} {song_artiste}"
-                image_file_name = ''.join(letter for letter in sasa_joined if letter.isalnum())
-                image_location = f"images/album_art/{image_file_name}.png"
-                new_image.save(image_location)
-                album_art_image = ImageResizer(image_location, 200)
-        return album_art_image, image_location
-
-# ---------------------------------------------- Download Album Art ----------------------------------------------------
-    def download_album_art(self):
-        song_namer = self.song_namer
-        song_artiste = self.song_artiste
-
-        try:
-            api = MusicBrainzAPI()
-            response = api.search_releases(f'release:{song_namer} AND artist:{song_artiste}')
-            album_art_url = response["images"][0]["thumbnails"]["small"]
-
-        except (requests.exceptions.ConnectionError, requests.exceptions.HTTPError,
-                requests.exceptions.MissingSchema, TypeError, KeyError):
-            image_location = "images/default_album_art.png"
-            self.album_art_image = ImageResizer(image_location, 200)
-
-        else:
-            sasa_joined = f"{song_namer} {song_artiste}"
-            image_file_name = ''.join(letter for letter in sasa_joined if letter.isalnum())
-            image_location = f"images/album_art/{image_file_name}.png"
-            try:
-                img_data = requests.get(album_art_url).content
-            except requests.exceptions.MissingSchema as e:
-                print(e)
-                image_location = "images/default_album_art.png"
-                self.album_art_image = ImageResizer(image_location, 200)
-            else:
-                with open(image_location, 'wb') as handler:
-                    handler.write(img_data)
-                imgee = Image.open(image_location)
-                self.album_art_image = ImageTk.PhotoImage(imgee)
-                try:
-                    image_location = f"{image_location}"
-                    pil_image = Image.open(image_location)
-                    self.album_art_image = ImageTk.PhotoImage(pil_image)
-                except (TclError, FileNotFoundError, AttributeError) as e:
-                    print(f'Song Tag Error:{e}\n Default Album Art!!')
-                    image_location = "images/default_album_art.png"
-                    self.album_art_image = ImageResizer(image_location, 200)
-
-        self.update_music_info()
-
 # -------------------------------------------------- Music Info --------------------------------------------------------
     def update_music_info(self):
         self.song_name_label.configure(text=self.song_namer)
@@ -533,7 +487,6 @@ class IReminiscentPlayer:
 
 # --------------------------------------------------- Seek Loop --------------------------------------------------------
     def slider_pressed_loop(self, seek_d):
-        print(self.song_time)
         if seek_d == "forward":
             self.current_time = self.current_time + 1
         else:
@@ -592,7 +545,8 @@ class IReminiscentPlayer:
             current_song_time = 0
         current_position = {
             'current_song_name': current_song_name,
-            'current_song_time': current_song_time
+            'current_song_time': current_song_time,
+            'current_skin': self.current_skin
         }
         with open("settings/mmp_settings.json", "r") as settings_file:
             settings_data = json.load(settings_file)
@@ -603,11 +557,45 @@ class IReminiscentPlayer:
 
 # ----------------------------------------------- Open Skin Selector ---------------------------------------------------
     def open_skin_selector(self):
-        Skin_Selector(self.windows, self.current_skin)
+        skin_selector = Skin_Selector(self.windows, self, self.current_skin)
+
+# ----------------------------------------------- Open Skin Selector ---------------------------------------------------
+    def update_skin(self, selected_skin):
+        self.main_skin_image = ImageResizer(f"images/skins/{selected_skin}.png", 186)
+        self.main_skin_imager.config(image=self.main_skin_image.image)
+
+        if selected_skin in ["blue", "cyan", "green", "pink", "red", "white"]:
+            self.playback_control_color = "direction-p"
+            self.play_control_color = "play"
+            self.pause_control_color = "pause"
+            self.menu_color = "menu"
+        else:
+            self.playback_control_color = "alt-direction-p"
+            self.play_control_color = "alt-play"
+            self.pause_control_color = "alt-pause"
+            self.menu_color = "alt-menu"
+
+        self.select_music_folder_image = ImageResizer(f"images/{self.menu_color}.png", 28)
+        self.select_music_folder_button.config(image=self.select_music_folder_image.image,
+                                               bg=skins[selected_skin]["main_button_color"],
+                                               activebackground=skins[selected_skin]["main_button_color"])
+
+        self.previous_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12)
+        self.previous_song_button.config(image=self.previous_song_image.image, bg=skins[selected_skin]["playback_color"],
+                                         activebackground=skins[selected_skin]["playback_color"])
+
+        self.play_song_image = ImageResizer(f"images/{self.play_control_color}.png", 12)
+        self.pause_song_image = ImageResizer(f"images/{self.pause_control_color}.png", 12)
+        self.play_song_button.config(image=self.play_song_image.image, bg=skins[selected_skin]["play_pause_color"],
+                                         activebackground=skins[selected_skin]["play_pause_color"])
+
+        self.next_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12, True)
+        self.next_song_button.config(image=self.next_song_image.image, bg=skins[selected_skin]["playback_color"],
+                                         activebackground=skins[selected_skin]["playback_color"])
 
 # -------------------------------------------------- Skin Selector -----------------------------------------------------
 class Skin_Selector(Toplevel):
-    def __init__(self, main_window, skin_color):
+    def __init__(self, main_window, main_app, skin_color):
         global skins
         super().__init__()
 
@@ -623,9 +611,11 @@ class Skin_Selector(Toplevel):
         self.grab_set()
         self.focus_set()
 
+        self.main_window = main_window
+        self.main_app = main_app
         self.selected_color = skin_color
 
-        self.color_label = Label(self, text=skin_color.upper(), bg='white', font=("arial", 12, "bold"))
+        self.color_label = Label(self, text=self.selected_color.upper(), bg='white', font=("arial", 12, "bold"))
         self.color_label.place(relx=0.5, rely=0.08, anchor=CENTER)
 
         self.skin_image = ImageResizer(f"images/skins/{skin_color}.png", 100)
@@ -643,31 +633,34 @@ class Skin_Selector(Toplevel):
         self.prev_imager.place(relx=0.12, rely=0.5, anchor=CENTER)
 
         self.apply_button = Button(self, bg='white', text="✅", activebackground='white', height=2,
-                                  borderwidth=0)
+                                  borderwidth=0, command=self.apply_skin)
         self.apply_button.place(relx=0.45, rely=0.95, anchor=E)
 
         self.cancel_button = Button(self, text="❌", bg='white', activebackground='white', height=2,
                                    borderwidth=0)
         self.cancel_button.place(relx=0.55, rely=0.95, anchor=W)
 
+# -------------------------------------------------- Skin Carousel -----------------------------------------------------
     def skin_controls(self, direc):
         all_skin_colors = list(skins.keys())
         index = all_skin_colors.index(self.selected_color)
         if direc == 'forward':
-            if index + 1 < len(all_skin_colors):
-                index += 1
-                self.selected_color = all_skin_colors[index]
-            else:
-                self.selected_color = self.selected_color
+            index = min(index + 1, len(all_skin_colors) - 1)
         else:
-            if index - 1 >= 0:
-                index -= 1
-                self.selected_color = all_skin_colors[index]
-            else:
-                self.selected_color = self.selected_color
+            index = max(index - 1, 0)
+
+        self.selected_color = all_skin_colors[index]
 
         self.skin_image = ImageResizer(f"images/skins/{self.selected_color}.png", 100)
         self.skin_imager.config(image=self.skin_image.image)
+
+        self.color_label.config(text=self.selected_color.upper())
+
+# --------------------------------------------------- Apply Skin -------------------------------------------------------
+    def apply_skin(self):
+        self.main_app.update_skin(self.selected_color)
+        self.main_app.current_skin = self.selected_color
+        self.destroy()
 
 # ------------------------------------------------------- Run ----------------------------------------------------------
 if __name__ == "__main__":
