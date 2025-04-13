@@ -317,7 +317,7 @@ class IReminiscentPlayer:
     def load_settings_file(self):
         global folder_path, current_song_name
         try:
-            with open("settings/mmp_settings.json", "r") as settings_file:
+            with open("settings/irp_settings.json", "r") as settings_file:
                 settings_data = settings_file.read()
         except FileNotFoundError:
             settings = {
@@ -326,7 +326,7 @@ class IReminiscentPlayer:
                 "current_song_time": None,
                 "current_skin": "blue"
             }
-            with open('settings/mmp_settings.json', 'w') as settings_file:
+            with open('settings/irp_settings.json', 'w') as settings_file:
                 settings_file.write(json.dumps(settings, indent=4))
         else:
             settings_dict = json.loads(settings_data)
@@ -548,10 +548,10 @@ class IReminiscentPlayer:
             'current_song_time': current_song_time,
             'current_skin': self.current_skin
         }
-        with open("settings/mmp_settings.json", "r") as settings_file:
+        with open("settings/irp_settings.json", "r") as settings_file:
             settings_data = json.load(settings_file)
             settings_data.update(current_position)
-        with open("settings/mmp_settings.json", "w") as settings_file:
+        with open("settings/irp_settings.json", "w") as settings_file:
             json.dump(settings_data, settings_file, indent=4)
         self.windows.destroy()
 
