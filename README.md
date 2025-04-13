@@ -5,7 +5,7 @@ Key Features:
 
 - Play, pause, and skip tracks
 - Display song metadata (title, artist, album)
-- Load and save playlist settings
+- Auto-Load and save playlist settings
 - MusicBrainz API integration for metadata/album art retrieval (In works)
 - Playlist management (In works)
 - Album art display (In works)
