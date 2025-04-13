@@ -1,5 +1,5 @@
 iReminiscentPlayer
-A lightweight music player with 7 iPod-inspired skins, built with Python and Tkinter, supporting various audio formats (MP3, WAV, FLAC).
+A lightweight music player with 9 iPod-inspired skins, built with Python and Tkinter, supporting various audio formats (MP3, WAV, FLAC).
 
 Key Features:
 
