@@ -18,7 +18,7 @@ from customtkinter import * # Custom Tkinter
 from image_resizer import ImageResizer # Custom Image Resizer
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide" # PyGame Prompt Hide
 import pygame.mixer as mixer # Mixer
-# --------------------------------------------------- Global Variables -------------------------------------------------
+# -------------------------------------------------- Global Variables --------------------------------------------------
 main_background = "#2F4F7F"
 alternate_background = "#1B3645"
 slider_color = "#34A8FF"
@@ -130,7 +130,7 @@ current_song_extension = 0
 playlist_song_label_names = []
 
 status = None
-# ----------------------------------------------------Main Class--------------------------------------------------------
+# --------------------------------------------------- Main Class -------------------------------------------------------
 class IReminiscentPlayer:
     def __init__(self):
         self.windows = Tk()
@@ -335,7 +335,7 @@ class IReminiscentPlayer:
                     current_song_name = settings_dict['current_song_name']
                     self.song_time = settings_dict['current_song_time']
                     self.current_skin = settings_dict['current_skin']
-                except json.decoder.JSONDecodeError:
+                except (json.decoder.JSONDecodeError, KeyError):
                     current_song_name = None
                     self.song_time = None
                     self.current_skin = "blue"
@@ -659,6 +659,11 @@ class Skin_Selector(Toplevel):
     def apply_skin(self):
         self.main_app.update_skin(self.selected_color)
         self.main_app.current_skin = self.selected_color
+        if play_state == 2:
+            self.main_app.play_song_button.config(image=self.main_app.pause_song_image.image)
+        else:
+            self.main_app.play_song_button.config(image=self.main_app.play_song_image.image)
+
         self.destroy()
 
 # ------------------------------------------------------- Run ----------------------------------------------------------
