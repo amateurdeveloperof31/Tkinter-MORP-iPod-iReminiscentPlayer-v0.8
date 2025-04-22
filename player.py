@@ -20,13 +20,6 @@ os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide" # PyGame Prompt Hide
 import pygame.mixer as mixer # Mixer
 # -------------------------------------------------- Global Variables --------------------------------------------------
 main_background = "#2F4F7F"
-alternate_background = "#1B3645"
-slider_color = "#34A8FF"
-playlist_frame_color = "#34A8FF"
-current_song_color = "#fff523"
-main_text = "#FFFFFF"  # White
-secondary_text = "#B3B8CF"  # Light Gray-Blue
-highlight = "#03A9F4"  # Bright Blue
 
 skins = {
     "black": {
@@ -102,8 +95,8 @@ skins = {
         "play_pause_color": "#e1e1da"
     }
 }
-
 skins_screen_bg = "#f4fdfd"
+current_skin = "blue"
 
 # Play State: {0: First Time - Paused, 1: Loaded - Paused, 2: Play, 3: Paused}
 play_state = 0
@@ -120,14 +113,11 @@ current_song_length = 0
 folder_path = None
 current_song_name = None
 
-play_queue = []
-play_queue_extensions = []
+play_queue = {}
 
 sorted_song_names = []
 
 current_song_extension = 0
-
-playlist_song_label_names = []
 
 status = None
 # --------------------------------------------------- Main Class -------------------------------------------------------
@@ -139,7 +129,7 @@ class IReminiscentPlayer:
         self.windows.minsize(width, height)
         self.windows.maxsize(width, height)
         self.windows.resizable(False, False)
-        window_icon = PhotoImage(file="images/window_icon.png")
+        window_icon = PhotoImage(file="assets/images/window_icon.png")
         self.windows.iconphoto(False, window_icon)
         self.windows.configure(bg=main_background)
 
@@ -149,14 +139,13 @@ class IReminiscentPlayer:
         self.current_time = 0
         self.song_time = None
 
-        self.current_skin = "blue"
         self.playback_control_color = "direction-p"
 
         # Main Canvas
         self.main_canvas = Canvas(self.windows, width=width, height=height)
         self.main_canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.main_skin_image = ImageResizer(f"images/skins/{self.current_skin}.png", 186)
+        self.main_skin_image = ImageResizer(f"assets/images/skins/{current_skin}.png", 186)
         self.main_skin_imager = Label(self.main_canvas, image=self.main_skin_image.image)
         self.main_skin_imager.place(relx=0.5, rely=0.5, anchor="center")
 
@@ -188,27 +177,27 @@ class IReminiscentPlayer:
         self.total_duration_label.place(relx=0.53, rely=0.25, anchor=W)
 
         # Music Controls
-        select_music_folder_image = ImageResizer("images/menu.png", 28)
-        self.select_music_folder_button = Button(self.main_canvas, bg=skins[self.current_skin]["main_button_color"],
-                                                activebackground = skins[self.current_skin]["main_button_color"],
+        select_music_folder_image = ImageResizer("assets/images/menu.png", 28)
+        self.select_music_folder_button = Button(self.main_canvas, bg=skins[current_skin]["main_button_color"],
+                                                activebackground = skins[current_skin]["main_button_color"],
                                                  image=select_music_folder_image.image, borderwidth=0,
                                                 command=self.select_song_folder, highlightthickness=0)
         self.select_music_folder_button.place(relx=0.5, rely=0.53, anchor=CENTER)
 
-        previous_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12)
+        previous_song_image = ImageResizer(f"assets/images/{self.playback_control_color}.png", 12)
         self.previous_song_button = Button(self.main_canvas, bg="#e8e8e1", image=previous_song_image.image,
                                            highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.previous_song_button.place(relx=0.21, rely=0.67, anchor=CENTER)
         self.previous_song_button.bind("<ButtonPress-1>", lambda event: self.slider_pressed("backward"))
         self.previous_song_button.bind("<ButtonRelease-1>", lambda event: self.handle_release("backward"))
 
-        self.play_song_image = ImageResizer("images/play.png", 12)
-        self.pause_song_image = ImageResizer("images/pause.png", 12)
+        self.play_song_image = ImageResizer("assets/images/play.png", 12)
+        self.pause_song_image = ImageResizer("assets/images/pause.png", 12)
         self.play_song_button = Button(self.main_canvas, bg="#e8e8e1", image=self.play_song_image.image, command=self.play_song,
                                        highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.play_song_button.place(relx=0.5, rely=0.81, anchor=CENTER)
 
-        next_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12, True)
+        next_song_image = ImageResizer(f"assets/images/{self.playback_control_color}.png", 12, True)
         self.next_song_button = Button(self.main_canvas, bg="#e8e8e1", image=next_song_image.image,
                                        highlightthickness=0, borderwidth=0, activebackground="#e8e8e1")
         self.next_song_button.place(relx=0.81, rely=0.67, anchor=CENTER)
@@ -248,12 +237,10 @@ class IReminiscentPlayer:
             play_state = 1
         elif play_state == 1:
             play_state = 2
+            mixer.music.play()
             if self.song_time:
-                mixer.music.play()
                 mixer.music.rewind()
                 mixer.music.set_pos(self.song_time)
-            else:
-                mixer.music.play()
             self.play_song_button.configure(image=self.pause_song_image.image)
             self.update_progressbar()
         elif play_state == 2:
@@ -272,8 +259,8 @@ class IReminiscentPlayer:
         self.song_time = None
         if song_number < len(play_queue)-1:
             song_number += 1
-            current_song_name = play_queue[song_number]
-            current_song_extension = play_queue_extensions[song_number]
+            current_song_name = list(play_queue.keys())[song_number]
+            current_song_extension = play_queue[current_song_name]
             self.load_song()
 
 # ------------------------------------------------ Previous Song -------------------------------------------------------
@@ -282,23 +269,15 @@ class IReminiscentPlayer:
         self.song_time = None
         if song_number > 0:
             song_number -= 1
-            current_song_name = play_queue[song_number]
-            current_song_extension = play_queue_extensions[song_number]
+            current_song_name = list(play_queue.keys())[song_number]
+            current_song_extension = play_queue[current_song_name]
             self.load_song()
-
-# --------------------------------------------- Select from Playlist ---------------------------------------------------
-    def on_double_click(self, label_number, label_name, playlist_song_list_frame):
-        global current_song_name, current_song_extension, song_number, play_queue
-        song_number = label_number
-        current_song_name = play_queue[song_number]
-        current_song_extension = play_queue_extensions[song_number]
-        self.song_time = None
-        self.load_song()
 
 # ---------------------------------------------- Select Song Folder ----------------------------------------------------
     def select_song_folder(self):
         global folder_path, current_song_name, song_number
         folder_path = filedialog.askdirectory()
+
         if folder_path:
             current_song_name = None
             self.song_time = None
@@ -306,17 +285,18 @@ class IReminiscentPlayer:
             settings = {
                 "folder_path": folder_path,
                 "current_song_name": current_song_name,
-                "current_song_time": self.song_time
+                "current_song_time": self.song_time,
+                "current_skin": current_skin
             }
-            with open('settings/irp_settings.json', 'w') as settings_file:
+            with open('assets/config/irp_settings.json', 'w') as settings_file:
                 settings_file.write(json.dumps(settings))
             self.load_settings_file()
 
 # ------------------------------------------------- Load Settings ------------------------------------------------------
     def load_settings_file(self):
-        global folder_path, current_song_name
+        global folder_path, current_song_name, current_skin
         try:
-            with open("settings/irp_settings.json", "r") as settings_file:
+            with open("assets/config/irp_settings.json", "r") as settings_file:
                 settings_data = settings_file.read()
         except FileNotFoundError:
             settings = {
@@ -325,7 +305,7 @@ class IReminiscentPlayer:
                 "current_song_time": None,
                 "current_skin": "blue"
             }
-            with open('settings/irp_settings.json', 'w') as settings_file:
+            with open('assets/config/irp_settings.json', 'w') as settings_file:
                 settings_file.write(json.dumps(settings, indent=4))
         else:
             settings_dict = json.loads(settings_data)
@@ -334,32 +314,29 @@ class IReminiscentPlayer:
                 try:
                     current_song_name = settings_dict['current_song_name']
                     self.song_time = settings_dict['current_song_time']
-                    self.current_skin = settings_dict['current_skin']
+                    current_skin = settings_dict['current_skin']
                 except (json.decoder.JSONDecodeError, KeyError):
                     current_song_name = None
                     self.song_time = None
-                    self.current_skin = "blue"
+                    current_skin = "blue"
             else:
                 current_song_name = None
                 self.song_time = None
-                self.current_skin = "blue"
+                current_skin = "blue"
 
+            self.update_skin(current_skin)
             self.load_playlist()
 
 # ------------------------------------------------- Load Playlist ------------------------------------------------------
     def load_playlist(self):
-        global folder_path, current_song_name, folder_path_label, play_queue, song_number, current_song_extension, play_queue_extensions
-
-        self.update_skin(self.current_skin)
+        global folder_path, current_song_name, folder_path_label, play_queue, song_number, current_song_extension
 
         if not folder_path or os.path.isdir(folder_path) == False:
             folder_path_label = "Select a Folder."
         else:
-            playlist_song_label_names.clear()
             sorted_song_names.clear()
 
-            play_queue *= 0
-            play_queue_extensions *= 0
+            play_queue = {}
 
             for path, subdirs, files in os.walk(folder_path):
                 for filenames in files:
@@ -386,17 +363,17 @@ class IReminiscentPlayer:
                         sorted_song_names.sort(key=str.lower)
                         indexer = sorted_song_names.index(song_title)
 
-                        play_queue.insert(indexer, os.path.join(path, filenames))
-                        play_queue_extensions.insert(indexer, file_extension)
+                        play_queue_list = list(play_queue.items())
+                        play_queue_list.insert(indexer, (os.path.join(path, filenames), file_extension))
+                        play_queue = dict(play_queue_list)
 
             folder_path_label = os.path.basename(folder_path)
             self.folder_label.configure(text=folder_path_label.upper())
             if not current_song_name or current_song_name == "":
-                current_song_name = play_queue[song_number]
-                current_song_extension = play_queue_extensions[song_number]
+                current_song_name = list(play_queue.keys())[song_number]
             else:
-                song_number = play_queue.index(current_song_name)
-                current_song_extension = play_queue_extensions[song_number]
+                song_number = list(play_queue.keys()).index(current_song_name)
+            current_song_extension = play_queue[current_song_name]
 
             self.load_song()
 
@@ -413,7 +390,6 @@ class IReminiscentPlayer:
         song_mins = int(current_song_length / 60)
         song_secs = int(current_song_length % 60)
         minutes = seconds = 0
-        # self.song_progress_bar.configure(to=current_song_length)
         self.current_duration_label.configure(text="{:02d}:{:02d}".format(minutes, seconds))
         self.total_duration_label.configure(text="{:02d}:{:02d}".format(song_mins, song_secs))
         mixer.music.load(song_path)
@@ -453,7 +429,6 @@ class IReminiscentPlayer:
             current_time = round((mixer.music.get_pos() / 1000) + self.song_time)
         else:
             current_time = round(mixer.music.get_pos() / 1000)
-        # self.song_progress_bar.set(round(current_time))
         minutes, seconds = divmod(round(current_time), 60)
         self.current_duration_label.configure(text="{:02d}:{:02d}".format(minutes, seconds))
         if play_state == 2:
@@ -468,7 +443,6 @@ class IReminiscentPlayer:
                     current_song_name = 0
                     play_state = 0
                     mixer.music.stop()
-                    # self.song_progress_bar.set(0)
                     self.current_duration_label.configure(text="00:00")
                     self.load_playlist()
 
@@ -545,22 +519,22 @@ class IReminiscentPlayer:
         current_position = {
             'current_song_name': current_song_name,
             'current_song_time': current_song_time,
-            'current_skin': self.current_skin
+            'current_skin': current_skin
         }
-        with open("settings/irp_settings.json", "r") as settings_file:
+        with open("assets/config/irp_settings.json", "r") as settings_file:
             settings_data = json.load(settings_file)
             settings_data.update(current_position)
-        with open("settings/irp_settings.json", "w") as settings_file:
+        with open("assets/config/irp_settings.json", "w") as settings_file:
             json.dump(settings_data, settings_file, indent=4)
         self.windows.destroy()
 
 # ----------------------------------------------- Open Skin Selector ---------------------------------------------------
     def open_skin_selector(self):
-        skin_selector = Skin_Selector(self.windows, self, self.current_skin)
+        skin_selector = Skin_Selector(self.windows, self)
 
 # ----------------------------------------------- Open Skin Selector ---------------------------------------------------
     def update_skin(self, selected_skin):
-        self.main_skin_image = ImageResizer(f"images/skins/{selected_skin}.png", 186)
+        self.main_skin_image = ImageResizer(f"assets/images/skins/{selected_skin}.png", 186)
         self.main_skin_imager.config(image=self.main_skin_image.image)
 
         if selected_skin in ["blue", "cyan", "green", "pink", "red", "white"]:
@@ -574,28 +548,28 @@ class IReminiscentPlayer:
             self.pause_control_color = "alt-pause"
             self.menu_color = "alt-menu"
 
-        self.select_music_folder_image = ImageResizer(f"images/{self.menu_color}.png", 28)
+        self.select_music_folder_image = ImageResizer(f"assets/images/{self.menu_color}.png", 28)
         self.select_music_folder_button.config(image=self.select_music_folder_image.image,
                                                bg=skins[selected_skin]["main_button_color"],
                                                activebackground=skins[selected_skin]["main_button_color"])
 
-        self.previous_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12)
+        self.previous_song_image = ImageResizer(f"assets/images/{self.playback_control_color}.png", 12)
         self.previous_song_button.config(image=self.previous_song_image.image, bg=skins[selected_skin]["playback_color"],
                                          activebackground=skins[selected_skin]["playback_color"])
 
-        self.play_song_image = ImageResizer(f"images/{self.play_control_color}.png", 12)
-        self.pause_song_image = ImageResizer(f"images/{self.pause_control_color}.png", 12)
+        self.play_song_image = ImageResizer(f"assets/images/{self.play_control_color}.png", 12)
+        self.pause_song_image = ImageResizer(f"assets/images/{self.pause_control_color}.png", 12)
         self.play_song_button.config(image=self.play_song_image.image, bg=skins[selected_skin]["play_pause_color"],
                                          activebackground=skins[selected_skin]["play_pause_color"])
 
-        self.next_song_image = ImageResizer(f"images/{self.playback_control_color}.png", 12, True)
+        self.next_song_image = ImageResizer(f"assets/images/{self.playback_control_color}.png", 12, True)
         self.next_song_button.config(image=self.next_song_image.image, bg=skins[selected_skin]["playback_color"],
                                          activebackground=skins[selected_skin]["playback_color"])
 
 # -------------------------------------------------- Skin Selector -----------------------------------------------------
 class Skin_Selector(Toplevel):
-    def __init__(self, main_window, main_app, skin_color):
-        global skins
+    def __init__(self, main_window, main_app):
+        global skins, current_skin
         super().__init__()
 
         self.title("Select Player Skin")
@@ -612,21 +586,21 @@ class Skin_Selector(Toplevel):
 
         self.main_window = main_window
         self.main_app = main_app
-        self.selected_color = skin_color
+        self.selected_color = current_skin
 
         self.color_label = Label(self, text=self.selected_color.upper(), bg='white', font=("arial", 12, "bold"))
         self.color_label.place(relx=0.5, rely=0.08, anchor=CENTER)
 
-        self.skin_image = ImageResizer(f"images/skins/{skin_color}.png", 100)
+        self.skin_image = ImageResizer(f"assets/images/skins/{current_skin}.png", 100)
         self.skin_imager = Label(self, image=self.skin_image.image)
         self.skin_imager.place(relx=0.5, rely=0.5, anchor=CENTER)
 
-        self.next_image = ImageResizer(f"images/prev-img.png", 25, TRUE)
+        self.next_image = ImageResizer(f"assets/images/prev-img.png", 25, TRUE)
         self.next_imager = Button(self, image=self.next_image.image, bg='white', activebackground='white',
                                   borderwidth=0, command= lambda: self.skin_controls('forward'))
         self.next_imager.place(relx=0.88, rely=0.5, anchor=CENTER)
 
-        self.prev_image = ImageResizer(f"images/prev-img.png", 25)
+        self.prev_image = ImageResizer(f"assets/images/prev-img.png", 25)
         self.prev_imager = Button(self, image=self.prev_image.image, bg='white', activebackground='white',
                                   borderwidth=0, command= lambda: self.skin_controls('backward'))
         self.prev_imager.place(relx=0.12, rely=0.5, anchor=CENTER)
@@ -650,15 +624,16 @@ class Skin_Selector(Toplevel):
 
         self.selected_color = all_skin_colors[index]
 
-        self.skin_image = ImageResizer(f"images/skins/{self.selected_color}.png", 100)
+        self.skin_image = ImageResizer(f"assets/images/skins/{self.selected_color}.png", 100)
         self.skin_imager.config(image=self.skin_image.image)
 
         self.color_label.config(text=self.selected_color.upper())
 
 # --------------------------------------------------- Apply Skin -------------------------------------------------------
     def apply_skin(self):
+        global current_skin
         self.main_app.update_skin(self.selected_color)
-        self.main_app.current_skin = self.selected_color
+        current_skin = self.selected_color
         if play_state == 2:
             self.main_app.play_song_button.config(image=self.main_app.pause_song_image.image)
         else:
