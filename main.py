@@ -1,26 +1,22 @@
 # ------------------------------------------------------- Imports ------------------------------------------------------
+from dataclasses import dataclass # Dataclasses
 from tkinter import * # Tkinter
-from tkinter import filedialog, ttk # Tkinter
+from tkinter import filedialog, messagebox # Tkinter
+from mutagen import File as MutagenFile # Mutagen File
 from io import BytesIO # Bytes IO
 from mutagen.id3 import ID3 # Mutagen Tags
 from mutagen.mp3 import MP3, HeaderNotFoundError # Mutagen Tags
 from mutagen.flac import FLAC # Mutagen Tags
 from mutagen.mp4 import MP4 # Mutagen Tags
-from PIL import Image, ImageTk # Pillow
 import json # JSON
 import os # OS
-from os.path import exists # Filepath
+from pathlib import Path
 from math import ceil # Math
-import requests # Requests
 import time # Time
-from datetime import datetime # Date/Time
-from customtkinter import * # Custom Tkinter
 from image_resizer import ImageResizer # Custom Image Resizer
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide" # PyGame Prompt Hide
 import pygame.mixer as mixer # Mixer
 # -------------------------------------------------- Global Variables --------------------------------------------------
-main_background = "#2F4F7F"
-
 skins = {
     "black": {
         "main_color": "#333333",
@@ -96,72 +92,54 @@ skins = {
     }
 }
 skins_screen_bg = "#f4fdfd"
-current_skin = "blue"
-
-# Play State: {0: First Time - Paused, 1: Loaded - Paused, 2: Play, 3: Paused}
-play_state = 0
-
-folder_path_label = "No Folders Selected. Select a Folder First."
-
-song_title = ""
-song_artist = ""
-song_album = ""
-
-song_number = 0
-current_song_length = 0
-
-folder_path = None
-current_song_name = None
-
-play_queue = {}
-
-sorted_song_names = []
-
-current_song_extension = 0
 
 status = None
+
 # --------------------------------------------------- Main Class -------------------------------------------------------
 class IReminiscentPlayer:
     def __init__(self):
+
+        # Windows UI
         self.windows = Tk()
         self.windows.title("IPlayerClassic")
         width, height = 185, 400
-        self.windows.minsize(width, height)
-        self.windows.maxsize(width, height)
+        self.windows.geometry(f"{width}x{height}")
         self.windows.resizable(False, False)
         window_icon = PhotoImage(file="assets/images/window_icon.png")
         self.windows.iconphoto(False, window_icon)
-        self.windows.configure(bg=main_background)
 
         # Initialize Mixer
         mixer.init()
-
-        self.current_time = 0
-        self.song_time = None
-
+        self.main_folder_path = None
+        self.play_state = 0 # Play State: {0: First Time - Paused, 1: Loaded - Paused, 2: Play, 3: Paused}
+        self.resume_time = None
+        self.track_playing = False # Track flag
+        self.current_skin = 'blue'
         self.playback_control_color = "direction-p"
+        self.folder_path_label = "Select a Folder from Menu."
 
         # Main Canvas
         self.main_canvas = Canvas(self.windows, width=width, height=height)
         self.main_canvas.place(relx=0, rely=0, relwidth=1, relheight=1)
 
-        self.main_skin_image = ImageResizer(f"assets/images/skins/{current_skin}.png", 186)
+        self.main_skin_image = ImageResizer(f"assets/images/skins/{self.current_skin}.png", 186)
         self.main_skin_imager = Label(self.main_canvas, image=self.main_skin_image.image)
         self.main_skin_imager.place(relx=0.5, rely=0.5, anchor="center")
 
+        # Labels
         # Selected Folder Name
         self.labeler = Label(self.main_canvas, bg=skins_screen_bg, text="Songs playing in Folder", width=20,
                              font=("Arial", 8, "normal"))
         self.labeler.place(relx=0.5, rely=0.082, anchor=CENTER)
 
-        self.folder_label = Label(self.main_canvas, bg=skins_screen_bg, text=folder_path_label, width=20,
+        self.folder_label = Label(self.main_canvas, bg=skins_screen_bg, text=self.folder_path_label, width=20,
                                   font=("Arial", 8, "bold"))
         self.folder_label.place(relx=0.5, rely=0.135, anchor=CENTER)
 
         # Song Name and Artist
-        self.song_name_label = Label(self.main_canvas, bg=skins_screen_bg, text=song_title, font=("arial", 10, "bold"))
+        self.song_name_label = Label(self.main_canvas, bg=skins_screen_bg, font=("arial", 10, "bold"))
         self.song_name_label.place(relx=0.5, rely=0.3, anchor=CENTER)
-        self.song_artist_label = Label(self.main_canvas, bg=skins_screen_bg, text=song_artist,
+        self.song_artist_label = Label(self.main_canvas, bg=skins_screen_bg,
                                        font=("arial", 8, "normal"))
         self.song_artist_label.place(relx=0.5, rely=0.35, anchor=CENTER)
 
@@ -176,10 +154,11 @@ class IReminiscentPlayer:
         self.total_duration_label = Label(self.main_canvas, bg="#f4fdfd", text="00:00", font=("arial", 8, "normal"))
         self.total_duration_label.place(relx=0.53, rely=0.25, anchor=W)
 
+        # Buttons
         # Music Controls
         select_music_folder_image = ImageResizer("assets/images/menu.png", 28)
-        self.select_music_folder_button = Button(self.main_canvas, bg=skins[current_skin]["main_button_color"],
-                                                activebackground = skins[current_skin]["main_button_color"],
+        self.select_music_folder_button = Button(self.main_canvas, bg=skins[self.current_skin]["main_button_color"],
+                                                activebackground = skins[self.current_skin]["main_button_color"],
                                                  image=select_music_folder_image.image, borderwidth=0,
                                                 command=self.select_song_folder, highlightthickness=0)
         self.select_music_folder_button.place(relx=0.5, rely=0.53, anchor=CENTER)
@@ -219,230 +198,191 @@ class IReminiscentPlayer:
         # Window Mainloop
         self.windows.mainloop()
 # --------------------------------------------------- Methods ----------------------------------------------------------
-# ----------------------------------------------- Mute/Unmute Song -----------------------------------------------------
-    def mute_unmute(self):
-        global muted, song_volume
-        if muted == 0:
-            muted = 1
-            mixer.music.set_volume(song_volume)
-        else:
-            muted = 0
-            mixer.music.set_volume(0.0)
-
-# -------------------------------------------------- Play Song ---------------------------------------------------------
-    def play_song(self):
-        global play_state
-        if play_state == 0:
-            self.update_progressbar()
-            play_state = 1
-        elif play_state == 1:
-            play_state = 2
-            mixer.music.play()
-            if self.song_time:
-                mixer.music.rewind()
-                mixer.music.set_pos(self.song_time)
-            self.play_song_button.configure(image=self.pause_song_image.image)
-            self.update_progressbar()
-        elif play_state == 2:
-            play_state = 3
-            self.play_song_button.configure(image=self.play_song_image.image)
-            mixer.music.pause()
-        else:
-            play_state = 2
-            self.play_song_button.configure(image=self.pause_song_image.image)
-            mixer.music.unpause()
-            self.update_progressbar()
-
-# -------------------------------------------------- Next Song ---------------------------------------------------------
-    def next_song(self):
-        global play_queue, current_song_name, current_song_extension, song_number
-        self.song_time = None
-        if song_number < len(play_queue)-1:
-            song_number += 1
-            current_song_name = list(play_queue.keys())[song_number]
-            current_song_extension = play_queue[current_song_name]
-            self.load_song()
-
-# ------------------------------------------------ Previous Song -------------------------------------------------------
-    def previous_song(self):
-        global play_queue, current_song_name, current_song_extension, song_number
-        self.song_time = None
-        if song_number > 0:
-            song_number -= 1
-            current_song_name = list(play_queue.keys())[song_number]
-            current_song_extension = play_queue[current_song_name]
-            self.load_song()
-
-# ---------------------------------------------- Select Song Folder ----------------------------------------------------
-    def select_song_folder(self):
-        global folder_path, current_song_name, song_number
-        folder_path = filedialog.askdirectory()
-
-        if folder_path:
-            current_song_name = None
-            self.song_time = None
-            song_number = 0
-            settings = {
-                "folder_path": folder_path,
-                "current_song_name": current_song_name,
-                "current_song_time": self.song_time,
-                "current_skin": current_skin
-            }
-            with open('assets/config/irp_settings.json', 'w') as settings_file:
-                settings_file.write(json.dumps(settings))
-            self.load_settings_file()
-
-# ------------------------------------------------- Load Settings ------------------------------------------------------
+# ------------------------------------------------ Load Settings -------------------------------------------------------
     def load_settings_file(self):
-        global folder_path, current_song_name, current_skin
+        settings_filepath = "assets/config/irp_settings.json"
+
         try:
-            with open("assets/config/irp_settings.json", "r") as settings_file:
+            with open(settings_filepath, 'r') as settings_file:
                 settings_data = settings_file.read()
-        except FileNotFoundError:
+            settings_dict = json.loads(settings_data)
+
+            self.main_folder_path = settings_dict['main_folder_path']
+            self.current_track_title = settings_dict['current_track_title']
+            self.resume_time = settings_dict['resume_time']
+            self.current_skin = settings_dict['current_skin']
+
+        except (FileNotFoundError, json.decoder.JSONDecodeError, KeyError) as e:
+            messagebox.showerror("Error!!", f"Error: {e}. New file has been created.")
             settings = {
-                "folder_path": None,
-                "current_song_name": None,
-                "current_song_time": None,
+                "main_folder_path": None,
+                "current_track_title": None,
+                "resume_time": None,
                 "current_skin": "blue"
             }
-            with open('assets/config/irp_settings.json', 'w') as settings_file:
+            with open(settings_filepath, 'w') as settings_file:
                 settings_file.write(json.dumps(settings, indent=4))
-        else:
-            settings_dict = json.loads(settings_data)
-            folder_path = settings_dict['folder_path']
-            if os.path.isdir(folder_path):
-                try:
-                    current_song_name = settings_dict['current_song_name']
-                    self.song_time = settings_dict['current_song_time']
-                    current_skin = settings_dict['current_skin']
-                except (json.decoder.JSONDecodeError, KeyError):
-                    current_song_name = None
-                    self.song_time = None
-                    current_skin = "blue"
-            else:
-                current_song_name = None
-                self.song_time = None
-                current_skin = "blue"
 
-            self.update_skin(current_skin)
-            self.load_playlist()
+        self.update_skin(self.current_skin)
+        self.load_playlist()
 
-# ------------------------------------------------- Load Playlist ------------------------------------------------------
+# ------------------------------------------------ Load Playlist -------------------------------------------------------
     def load_playlist(self):
-        global folder_path, current_song_name, folder_path_label, play_queue, song_number, current_song_extension
-
-        if not folder_path or os.path.isdir(folder_path) == False:
-            folder_path_label = "Select a Folder."
+        if not self.main_folder_path or not Path(self.main_folder_path).is_dir:
+            self.folder_path_label = "Select a Folder."
+            return self.folder_path_label
         else:
-            sorted_song_names.clear()
+            self.main_playlist = []
+            self.current_track_info = {}
+            self.current_track_number = None
+            for path in Path(self.main_folder_path).rglob('*'):
+                try:
+                    if path.is_file() and path.suffix.lower() in [".mp3" or ".wav" or ".flac"]:
+                        track_extension = path.suffix[1:].upper()
+                        if track_extension == "M4A":
+                            track_extension = "MP4"
+                        tags = globals()[track_extension](path)
+                        track_length = tags.info.length
 
-            play_queue = {}
-
-            for path, subdirs, files in os.walk(folder_path):
-                for filenames in files:
-                    if filenames.endswith("mp3") or filenames.endswith("wav") or filenames.endswith("flac"):
-                        print(os.path.join(path, filenames))
-                        file_extension = os.path.splitext(filenames)
-                        file_extension = file_extension[1].replace('.', '').upper()
-
-                        try:
-                            tags = globals()[file_extension](os.path.join(path, filenames))
-
-                        except HeaderNotFoundError:
-                            song_namer = os.path.splitext(filenames)
-                            song_namer = song_namer[0]
-                            song_title = song_namer
+                        if path.suffix.lower() == (".flac"):
+                            track_name = str(tags.get('TITLE')[0])
+                            track_artist = str(tags.get('ARTIST')[0])
+                            track_album = str(tags.get('ALBUM')[0])
                         else:
-                            if filenames.endswith("flac"):
-                                song_title = tags.get('TITLE')[0]
-                            else:
-                                song_title = tags.get('TIT2')
-                        if song_title == None:
-                            song_title = filenames
-                        sorted_song_names.append(str(song_title))
-                        sorted_song_names.sort(key=str.lower)
-                        indexer = sorted_song_names.index(song_title)
+                            track_name = str(tags.get('TIT2'))
+                            track_artist = str(tags.get('TPE1'))
+                            track_album = str(tags.get('TALB'))
 
-                        play_queue_list = list(play_queue.items())
-                        play_queue_list.insert(indexer, (os.path.join(path, filenames), file_extension))
-                        play_queue = dict(play_queue_list)
+                        track_details = {
+                                'track_name': track_name,
+                                'track_path': str(path),
+                                'track_artist': track_artist,
+                                'track_album': track_album,
+                                'track_extension': track_extension,
+                                'track_length': track_length
+                        }
+                        self.main_playlist.append(track_details)
+                except Exception as e:
+                    return messagebox.showerror("Error!!", f"Error: {str(e)}", parent=self)
 
-            folder_path_label = os.path.basename(folder_path)
-            self.folder_label.configure(text=folder_path_label.upper())
-            if not current_song_name or current_song_name == "":
-                current_song_name = list(play_queue.keys())[song_number]
-            else:
-                song_number = list(play_queue.keys()).index(current_song_name)
-            current_song_extension = play_queue[current_song_name]
+        self.main_playlist = sorted(self.main_playlist, key=lambda x: x['track_name'])
 
-            self.load_song()
+        folder_path_label = os.path.basename(self.main_folder_path)
+        self.folder_label.configure(text=folder_path_label.upper())
+        if self.current_track_title:
+            for index, song_detail in enumerate(self.main_playlist):
+                if song_detail['track_name'] == self.current_track_title:
+                    self.current_track_info = song_detail
+                    self.current_track_number = index
+        else:
+            self.current_track_number = 0
+            self.current_track_info = self.main_playlist[self.current_track_number]
+            self.current_track_title = self.current_track_info['track_name']
+
+        self.load_song()
 
 # --------------------------------------------------- Load Song --------------------------------------------------------
     def load_song(self):
-        global folder_path, current_song_name, song_title, song_artist, song_album, play_state, song_number, current_song_length, status, current_song_extension
+        global status
         if status:
             self.windows.after_cancel(status)
         self.play_song_button.configure(image=self.play_song_image.image)
-        song_path = f"{current_song_name}"
-        print(song_path)
-        if current_song_extension == "M4A":
-            current_song_extension = "MP4"
-        current_song_length = globals()[current_song_extension](song_path).info.length
+        song_path = self.current_track_info['track_path']
+        current_song_length = self.current_track_info['track_length']
         song_mins = int(current_song_length / 60)
         song_secs = int(current_song_length % 60)
         minutes = seconds = 0
         self.current_duration_label.configure(text="{:02d}:{:02d}".format(minutes, seconds))
         self.total_duration_label.configure(text="{:02d}:{:02d}".format(song_mins, song_secs))
         mixer.music.load(song_path)
-        if play_state != 0:
-            play_state = 1
-        tags = globals()[current_song_extension](song_path)
-
-        if current_song_extension == "FLAC":
-            song_title = str(tags.get('TITLE')[0])
-            song_artist = str(tags.get('ARTIST')[0])
-            song_album = str(tags.get('ALBUM')[0])
-            album_artist = str(tags.get('ALBUMARTIST')[0])
-        else:
-            song_title = str(tags.get('TIT2'))
-            song_artist = str(tags.get('TPE1'))
-            song_album = str(tags.get('TALB'))
-            album_artist = str(tags.get('TPE2'))
-
-            if album_artist == None or album_artist == "":
-                album_artist = song_artist
-
-        self.song_namer = song_title
-        self.song_artiste = song_artist
+        if self.play_state != 0:
+            self.play_state = 1
 
         self.update_music_info()
         self.play_song()
 
+# -------------------------------------------------- Play Song ---------------------------------------------------------
+    def play_song(self):
+        if self.play_state == 0:
+            self.play_state = 1
+            self.update_progressbar()
+        elif self.play_state == 1:
+            self.play_state = 2
+            mixer.music.play()
+            if self.resume_time:
+                mixer.music.rewind()
+                mixer.music.set_pos(self.resume_time)
+            self.play_song_button.configure(image=self.pause_song_image.image)
+            self.update_progressbar()
+        elif self.play_state == 2:
+            self.play_state = 3
+            self.play_song_button.configure(image=self.play_song_image.image)
+            mixer.music.pause()
+        else:
+            self.play_state = 2
+            self.play_song_button.configure(image=self.pause_song_image.image)
+            mixer.music.unpause()
+            self.update_progressbar()
+
+# -------------------------------------------------- Next Song ---------------------------------------------------------
+    def next_song(self):
+        self.resume_time = None
+        if self.current_track_number < len(self.main_playlist)-1:
+            self.current_track_number += 1
+            self.current_track_info = self.main_playlist[self.current_track_number]
+            self.load_song()
+
+# ------------------------------------------------ Previous Song -------------------------------------------------------
+    def previous_song(self):
+        self.resume_time = None
+        if self.current_track_number > 0:
+            self.current_track_number -= 1
+            self.current_track_info = self.main_playlist[self.current_track_number]
+            self.load_song()
+
+# ---------------------------------------------- Select Song Folder ----------------------------------------------------
+    def select_song_folder(self):
+        folder_path = filedialog.askdirectory()
+
+        if folder_path:
+            self.main_folder_path = folder_path
+            current_skin = self.current_skin
+            settings = {
+                "main_folder_path": self.main_folder_path,
+                "current_track_title": None,
+                "resume_time": None,
+                "current_skin": current_skin
+            }
+            with open('assets/config/irp_settings.json', 'w') as settings_file:
+                settings_file.write(json.dumps(settings))
+            self.load_settings_file()
+
 # -------------------------------------------------- Music Info --------------------------------------------------------
     def update_music_info(self):
-        self.song_name_label.configure(text=self.song_namer)
-        self.song_artist_label.configure(text=self.song_artiste)
+        self.song_name_label.configure(text=self.current_track_info['track_name'])
+        self.song_artist_label.configure(text=self.current_track_info['track_artist'])
 
 # ------------------------------------------------ Song Progress -------------------------------------------------------
     def update_progressbar(self):
-        global status, play_state, current_song_length, song_number, current_song_name
-        if self.song_time:
-            current_time = round((mixer.music.get_pos() / 1000) + self.song_time)
+        global status
+        current_song_length = self.current_track_info['track_length']
+        if self.resume_time:
+            current_time = round((mixer.music.get_pos() / 1000) + self.resume_time)
         else:
             current_time = round(mixer.music.get_pos() / 1000)
         minutes, seconds = divmod(round(current_time), 60)
         self.current_duration_label.configure(text="{:02d}:{:02d}".format(minutes, seconds))
-        if play_state == 2:
+        if self.play_state == 2:
             if current_time < round(current_song_length) - 1:
                 status = self.windows.after(1000, lambda: self.update_progressbar())
             else:
-                if song_number < len(play_queue) - 1:
+                if self.current_track_number < len(self.main_playlist) - 1:
                     self.next_song()
                 else:
-                    self.song_time = 0
-                    song_number = 0
-                    current_song_name = 0
-                    play_state = 0
+                    self.resume_time = 0
+                    self.current_track_number = 0
+                    self.current_track_title = None
+                    self.play_state = 0
                     mixer.music.stop()
                     self.current_duration_label.configure(text="00:00")
                     self.load_playlist()
@@ -455,7 +395,7 @@ class IReminiscentPlayer:
 # -------------------------------------------------- Start Seek --------------------------------------------------------
     def start_seeking(self, seek_d):
         mixer.music.pause()
-        self.current_time = round((mixer.music.get_pos() / 1000) + (self.song_time or 0))
+        self.current_time = round((mixer.music.get_pos() / 1000) + (self.resume_time or 0))
         self.seek_mode = True
         self.slider_pressed_loop(seek_d)
 
@@ -471,16 +411,16 @@ class IReminiscentPlayer:
         if ceil(self.current_time) == ceil(current_song_length) - 1:
             self.next_song()
         elif ceil(self.current_time) < 1:
-            self.song_time = 0
+            self.resume_time = 0
             self.play_song()
 
-        self.song_time = self.current_time
+        self.resume_time = self.current_time
 
         self.after_id = self.windows.after(100, lambda: self.slider_pressed_loop(seek_d))
 
 # --------------------------------------------------- Seek Stop --------------------------------------------------------
     def slider_released(self, event=None):
-        global play_state, current_song_length
+        global current_song_length
 
         if hasattr(self, 'seek_timer'):
             self.windows.after_cancel(self.seek_timer)
@@ -490,7 +430,7 @@ class IReminiscentPlayer:
             self.windows.after_cancel(self.after_id)
             del self.after_id
 
-        play_state = 1
+        self.play_state = 1
         self.play_song()
 
 # ------------------------------------------------- Handle Release -----------------------------------------------------
@@ -511,22 +451,18 @@ class IReminiscentPlayer:
 
 # ---------------------------------------------------- On Close --------------------------------------------------------
     def close_program_event(self):
-        global current_song_name
-        current_song_time = (mixer.music.get_pos() / 1000)
-        if self.song_time:
-            current_song_time += self.song_time
-        if current_song_time < 0:
-            current_song_time = 0
-        current_position = {
-            'current_song_name': current_song_name,
-            'current_song_time': current_song_time,
-            'current_skin': current_skin
+        if self.resume_time:
+            current_song_time = max(0, ((mixer.music.get_pos() / 1000) + self.resume_time))
+        else:
+            current_song_time = max(0, (mixer.music.get_pos() / 1000))
+        current_settings = {
+            "main_folder_path": self.main_folder_path,
+            'current_track_title': self.current_track_title,
+            'resume_time': current_song_time,
+            'current_skin': self.current_skin
         }
-        with open("assets/config/irp_settings.json", "r") as settings_file:
-            settings_data = json.load(settings_file)
-            settings_data.update(current_position)
         with open("assets/config/irp_settings.json", "w") as settings_file:
-            json.dump(settings_data, settings_file, indent=4)
+            settings_file.write(json.dumps(current_settings))
         self.windows.destroy()
 
 # ----------------------------------------------- Open Skin Selector ---------------------------------------------------
@@ -567,10 +503,19 @@ class IReminiscentPlayer:
         self.next_song_button.config(image=self.next_song_image.image, bg=skins[selected_skin]["playback_color"],
                                          activebackground=skins[selected_skin]["playback_color"])
 
+# ----------------------------------------------- Mute/Unmute Song -----------------------------------------------------
+    def mute_unmute(self):
+        global muted, song_volume
+        if muted == 0:
+            muted = 1
+            mixer.music.set_volume(song_volume)
+        else:
+            muted = 0
+            mixer.music.set_volume(0.0)
+
 # -------------------------------------------------- Skin Selector -----------------------------------------------------
 class Skin_Selector(Toplevel):
     def __init__(self, main_window, main_app):
-        global skins, current_skin
         super().__init__()
 
         self.title("Select Player Skin")
@@ -587,12 +532,12 @@ class Skin_Selector(Toplevel):
 
         self.main_window = main_window
         self.main_app = main_app
-        self.selected_color = current_skin
+        self.selected_color = self.main_app.current_skin
 
         self.color_label = Label(self, text=self.selected_color.upper(), bg='white', font=("arial", 12, "bold"))
         self.color_label.place(relx=0.5, rely=0.08, anchor=CENTER)
 
-        self.skin_image = ImageResizer(f"assets/images/skins/{current_skin}.png", 100)
+        self.skin_image = ImageResizer(f"assets/images/skins/{self.main_app.current_skin}.png", 100)
         self.skin_imager = Label(self, image=self.skin_image.image)
         self.skin_imager.place(relx=0.5, rely=0.5, anchor=CENTER)
 
@@ -632,10 +577,9 @@ class Skin_Selector(Toplevel):
 
 # --------------------------------------------------- Apply Skin -------------------------------------------------------
     def apply_skin(self):
-        global current_skin
         self.main_app.update_skin(self.selected_color)
-        current_skin = self.selected_color
-        if play_state == 2:
+        self.main_app.current_skin = self.selected_color
+        if self.main_app.play_state == 2:
             self.main_app.play_song_button.config(image=self.main_app.pause_song_image.image)
         else:
             self.main_app.play_song_button.config(image=self.main_app.play_song_image.image)
