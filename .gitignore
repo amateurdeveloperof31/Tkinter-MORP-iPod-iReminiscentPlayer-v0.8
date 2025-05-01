@@ -1,0 +1,7 @@
+assets/images/album_art/
+assets/images/saved/
+.venv/
+backup.py
+test.py
+test2.py
+test3.py
