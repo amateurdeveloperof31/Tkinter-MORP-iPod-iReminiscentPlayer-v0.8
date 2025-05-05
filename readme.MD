@@ -32,5 +32,5 @@ Images:
   - Pack: <a href="https://www.flaticon.com/packs/media-player-buttons-13481041">Multimedia Icons Pack - Flaticon</a>
 
 Screenshots:
-- Blue: ![image](https://github.com/user-attachments/assets/23ac3983-9fa5-45e7-88a3-ac5795d9e569)
+- Blue: ![Screenshot of Red Skin](./screenshots/blue.jpg)
 - Red: ![Screenshot of Red Skin](./screenshots/red.jpg)
