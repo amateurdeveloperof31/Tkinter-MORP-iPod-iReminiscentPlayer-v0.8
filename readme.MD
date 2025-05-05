@@ -33,4 +33,4 @@ Images:
 
 Screenshots:
 - Blue: ![image](https://github.com/user-attachments/assets/23ac3983-9fa5-45e7-88a3-ac5795d9e569)
-- Red: ![Screenshot of the Red Skin](./screenshots/red.jpg)
+- Red: ![Screenshot of the Red Skin](./screenshots/red.png)
