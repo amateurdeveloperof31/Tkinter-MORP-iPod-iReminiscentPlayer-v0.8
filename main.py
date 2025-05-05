@@ -91,7 +91,6 @@ skins = {
         "play_pause_color": "#e1e1da"
     }
 }
-skins_screen_bg = "#f4fdfd"
 
 status = None
 
@@ -113,10 +112,10 @@ class IReminiscentPlayer:
         self.main_folder_path = None
         self.play_state = 0 # Play State: {0: First Time - Paused, 1: Loaded - Paused, 2: Play, 3: Paused}
         self.resume_time = None
-        self.track_playing = False # Track flag
         self.current_skin = 'blue'
         self.playback_control_color = "direction-p"
         self.folder_path_label = "Select a Folder from Menu."
+        self.skins_screen_bg = "#f4fdfd"
 
         # Main Canvas
         self.main_canvas = Canvas(self.windows, width=width, height=height)
@@ -128,27 +127,27 @@ class IReminiscentPlayer:
 
         # Labels
         # Selected Folder Name
-        self.labeler = Label(self.main_canvas, bg=skins_screen_bg, text="Songs playing in Folder", width=20,
+        self.labeler = Label(self.main_canvas, bg=self.skins_screen_bg, text="Songs playing in Folder", width=20,
                              font=("Arial", 8, "normal"))
         self.labeler.place(relx=0.5, rely=0.082, anchor=CENTER)
 
-        self.folder_label = Label(self.main_canvas, bg=skins_screen_bg, text=self.folder_path_label, width=20,
+        self.folder_label = Label(self.main_canvas, bg=self.skins_screen_bg, text=self.folder_path_label, width=20,
                                   font=("Arial", 8, "bold"))
         self.folder_label.place(relx=0.5, rely=0.135, anchor=CENTER)
 
         # Song Name and Artist
-        self.song_name_label = Label(self.main_canvas, bg=skins_screen_bg, font=("arial", 10, "bold"))
+        self.song_name_label = Label(self.main_canvas, bg=self.skins_screen_bg, font=("arial", 10, "bold"))
         self.song_name_label.place(relx=0.5, rely=0.3, anchor=CENTER)
-        self.song_artist_label = Label(self.main_canvas, bg=skins_screen_bg,
+        self.song_artist_label = Label(self.main_canvas, bg=self.skins_screen_bg,
                                        font=("arial", 8, "normal"))
         self.song_artist_label.place(relx=0.5, rely=0.35, anchor=CENTER)
 
         # Song Duration and Progressbar
-        self.current_duration_label = Label(self.main_canvas, bg=skins_screen_bg, text="00:00",
+        self.current_duration_label = Label(self.main_canvas, bg=self.skins_screen_bg, text="00:00",
                                             font=("arial", 8, "normal"))
         self.current_duration_label.place(relx=0.47, rely=0.25, anchor=E)
 
-        self.duration_divider_label = Label(self.main_canvas, bg=skins_screen_bg, text="/", font=("arial", 8, "normal"))
+        self.duration_divider_label = Label(self.main_canvas, bg=self.skins_screen_bg, text="/", font=("arial", 8, "normal"))
         self.duration_divider_label.place(relx=0.498, rely=0.25, anchor=CENTER)
 
         self.total_duration_label = Label(self.main_canvas, bg="#f4fdfd", text="00:00", font=("arial", 8, "normal"))
@@ -401,6 +400,7 @@ class IReminiscentPlayer:
 
 # --------------------------------------------------- Seek Loop --------------------------------------------------------
     def slider_pressed_loop(self, seek_d):
+        current_song_length = self.current_track_info['track_length']
         if seek_d == "forward":
             self.current_time = self.current_time + 1
         else:
@@ -420,7 +420,6 @@ class IReminiscentPlayer:
 
 # --------------------------------------------------- Seek Stop --------------------------------------------------------
     def slider_released(self, event=None):
-        global current_song_length
 
         if hasattr(self, 'seek_timer'):
             self.windows.after_cancel(self.seek_timer)
