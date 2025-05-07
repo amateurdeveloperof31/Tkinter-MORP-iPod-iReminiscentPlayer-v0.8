@@ -24,6 +24,11 @@ Usage:
 2. Run python main.py
 3. Select a music folder using the "Menu" button
 
+Update (0.9):
+- Bug Fixes/Global Variables
+- New Features
+  - Added support for album art using MusicBrainz API
+
 Attribution:
 **iPod is a trademark of Apple Inc. This project is not affiliated with or endorsed by Apple Inc.**
 
